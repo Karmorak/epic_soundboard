@@ -1,0 +1,14 @@
+apply plugin: "java"
+sourceCompatibility = 1.8
+sourceSets.main.java.srcDirs = ["src/"]
+eclipse.project {
+    name = appName + "-core"
+}
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+	compile "com.sedmelluq:lavaplayer:1.3.6"
+}
