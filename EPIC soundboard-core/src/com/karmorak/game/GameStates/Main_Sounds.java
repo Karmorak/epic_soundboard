@@ -22,6 +22,16 @@ import com.karmorak.game.Soundboard;
 
 public class Main_Sounds extends ButtonRegisters implements GameState  {
 
+	
+	/* - Button alpha support
+	 * - 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
+	
 	private static final int UI_ABS = 13, BUTTON_ABS_X = 15, BUTTON_ABS_Y = 45, LEFT_ABS = 25;
 	private static final float DEF_VOL = 0.4f, WARN_TIME = 3f;
 	private static float ALL_Y;
@@ -50,7 +60,9 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 //	public static boolean state_hotkey = false;
 //	public static boolean state_color = false;
 	
-	private static Button UI_TOPIC, UI_KEY, UI_KEYCLEAR, UI_X;
+	private static Button UI_TOPIC, UI_KEY, UI_KEYCLEAR, UI_X, UI_RESULT;
+	private static final float UI_RESULT_TIME = 2f;
+	private static float UI_last_result;
 	private static final Sprite UI_BACKGROUND_TEXTURE = new Sprite(new Texture(Gdx.files.internal("assets//ui_background.png")));
 	
 	
@@ -138,6 +150,14 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 	@Override
 	public void update() {
 		posButtons();		
+		
+		if(UI_RESULT != null) {
+			if(UI_last_result >= UI_RESULT_TIME) {
+				UI_RESULT.show(false);
+			} else {
+				UI_last_result += Gdx.graphics.getDeltaTime();
+			}
+		}
 		
 		if(discord_text != null && time_discord_warning < WARN_TIME) {
 			if(!discord_text.getshow()) discord_text.show(true);
@@ -420,8 +440,9 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 			UI_TOPIC.draw(batch);
 			UI_X.draw(batch);
 			COLOR_BAR.draw(batch);
+			
 		}
-		
+		if(UI_RESULT != null) UI_RESULT.draw(batch);
 		
 	}
 	
@@ -582,17 +603,42 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 				ID.saveButtonAttributes();
 			}
 			
+			UI_RESULT.setName("saved Hotkey");
+			UI_last_result = 0;
+			UI_RESULT.show(true);
+			UI_RESULT.setPosition(Gdx.graphics.getWidth() - UI_RESULT.getwidth() - UI_ABS, UI_ABS*2);
+			
 			UI_KEY.setName("Key:");
 			
 			
 		} else if (state_UI == -1){
 			ID = id;
-			if(UI_TOPIC == null) {
-				UI_BACKGROUND_TEXTURE.setSize(Gdx.graphics.getWidth()*0.2f, Gdx.graphics.getHeight()*0.2f);
-				UI_TOPIC = new Button("Enter a Hotkey");
-				UI_TOPIC.setInteractable(false);
-				UI_TOPIC.setThickFont(true);
+			if(UI_RESULT != null) {
+				UI_RESULT.show(false);
+				UI_RESULT.setName("result");
+			} else {
+				UI_RESULT = new Button("result");
+				UI_RESULT.setThickFont(true);
+				UI_RESULT.setColor(Color.BLACK);
+				UI_RESULT.setScale(1.5f);
+				UI_RESULT.initBackground();
+				UI_RESULT.setInteractable(false);				
+				UI_last_result = UI_RESULT_TIME;
+				UI_RESULT.show(false);
+				UI_RESULT.getBackground().show(true);
+			}
+			if(UI_KEY != null) {
+				UI_KEY.show(true);
+				UI_KEYCLEAR.show(true);
+				int key = -1;					
+				try {
+					key = Integer.parseInt(id.getButtonAttributes()[0].replace("key", ""));
+				} catch (Exception e) {}
 				
+				if(key > -1) {
+					UI_KEY.setName("Key:" + Keys.toString(key));
+				}		
+			} else {
 				UI_KEY = new Button("Key:");
 				int key = -1;					
 				try {
@@ -601,11 +647,17 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 				
 				if(key > -1) {
 					UI_KEY.setName("Key:" + Keys.toString(key));
-				}	
-				
-				
+				}					
 				UI_KEYCLEAR = new Button("(CLEAR)");
-				UI_KEYCLEAR.setSelectable(false);
+				UI_KEYCLEAR.setSelectable(false);				
+			}
+			
+			
+			if(UI_TOPIC == null) {
+				UI_BACKGROUND_TEXTURE.setSize(Gdx.graphics.getWidth()*0.2f, Gdx.graphics.getHeight()*0.2f);
+				UI_TOPIC = new Button("Enter a Hotkey");
+				UI_TOPIC.setInteractable(false);
+				UI_TOPIC.setThickFont(true);
 				
 				UI_X = new Button("X");
 				UI_X.setThickFont(true);
@@ -614,9 +666,7 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 				UI_BACKGROUND_TEXTURE.setX((Gdx.graphics.getWidth() - UI_BACKGROUND_TEXTURE.getWidth()) *0.5f);
 				UI_BACKGROUND_TEXTURE.setY((Gdx.graphics.getHeight() - UI_BACKGROUND_TEXTURE.getHeight()) *0.5f);			
 				UI_TOPIC.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth() - UI_TOPIC.getwidth())*0.5f, UI_BACKGROUND_TEXTURE.getY() + UI_BACKGROUND_TEXTURE.getHeight() - UI_TOPIC.getheight() - UI_ABS);
-				UI_KEY.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.3f - UI_KEY.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEY.getheight())*0.5f);
-				UI_KEYCLEAR.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.6f - UI_KEYCLEAR.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEYCLEAR.getheight())*0.5f);
-			
+							
 				UI_X.setPosition(UI_BACKGROUND_TEXTURE.getX() + UI_ABS, UI_BACKGROUND_TEXTURE.getY() + UI_BACKGROUND_TEXTURE.getHeight() - UI_ABS - UI_X.getheight());
 				
 				Button.selected_Button = UI_KEY.getID();
@@ -624,22 +674,11 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 				ID = id;
 				UI_TOPIC.show(true);
 				UI_TOPIC.setName("Enter a Hotkey");
-				UI_KEY.show(true);
-				UI_KEYCLEAR.show(true);
-				UI_X.show(true);
-				UI_KEY.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.3f - UI_KEY.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEY.getheight())*0.5f);
-				UI_KEYCLEAR.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.6f - UI_KEYCLEAR.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEYCLEAR.getheight())*0.5f);
-						
-				int key = -1;					
-				try {
-					key = Integer.parseInt(id.getButtonAttributes()[0].replace("key", ""));
-				} catch (Exception e) {}
-				
-				if(key > -1) {
-					UI_KEY.setName("Key:" + Keys.toString(key));
-				}			
+				UI_X.show(true);		
 				state_UI = STATE_HOTKEY;
 			}
+			UI_KEY.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.3f - UI_KEY.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEY.getheight())*0.5f);
+			UI_KEYCLEAR.setPosition(UI_BACKGROUND_TEXTURE.getX() + (UI_BACKGROUND_TEXTURE.getWidth()*0.6f - UI_KEYCLEAR.getwidth()*0.5f), UI_BACKGROUND_TEXTURE.getY() + (UI_BACKGROUND_TEXTURE.getHeight() - UI_KEYCLEAR.getheight())*0.5f);
 			
 		}	
 	}
@@ -661,6 +700,11 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 			
 			id.saveButtonAttributes();
 			
+			UI_RESULT.setName("saved Color");
+			UI_last_result = 0;
+			UI_RESULT.show(true);
+			UI_RESULT.setPosition(Gdx.graphics.getWidth() - UI_RESULT.getwidth() - UI_ABS, UI_ABS*2);
+			
 		} else if (state_UI == -1){
 			ID = id;
 			if(COLOR_BAR != null) {
@@ -675,6 +719,21 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 				COLOR_BAR.setName(" ");		
 				COLOR_BAR.show(true);
 			}
+			if(UI_RESULT != null) {
+				UI_RESULT.show(false);
+				UI_RESULT.setName("result");
+			} else {
+				UI_RESULT = new Button("result");
+				UI_RESULT.setThickFont(true);
+				UI_RESULT.setColor(Color.BLACK);
+				UI_RESULT.setScale(1.5f);
+				UI_RESULT.initBackground();
+				UI_RESULT.setInteractable(false);				
+				UI_last_result = UI_RESULT_TIME;
+				UI_RESULT.show(false);
+				UI_RESULT.getBackground().show(true);
+			}
+		
 			if(UI_TOPIC != null) {
 				UI_TOPIC.show(true);
 				UI_TOPIC.setName("Select a Color");	
@@ -795,7 +854,11 @@ public class Main_Sounds extends ButtonRegisters implements GameState  {
 
 	@Override
 	public void touchDragged(int arg0, int arg1, int arg2) {
-		// TODO Auto-generated method stub		
+		if(state_UI == STATE_COLOR) {
+			if(COLOR_BAR.isDragged()) {
+				COLOR_BAR.setName(GraphicFunktions.getColorName(COLOR_BAR.getValue()));
+			}
+		}	
 	}
 
 	@Override
